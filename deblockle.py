@@ -8,6 +8,10 @@ Created on Thu Dec 26 23:40:21 2019
 from pyquaternion import Quaternion
 import numpy
 
+        
+def eq_with_tol(a, b, tol):
+    return abs(a-b) < tol
+
 class Block:
     '''
     Assume the user is looking down at the board, then X is positive to the
@@ -31,6 +35,7 @@ class Block:
     diag:  x
     adj:   +
     '''
+            
     opposites = {
         'stop':'star',
         'star':'stop',
@@ -43,19 +48,37 @@ class Block:
     def __init__(self, coords, stop_face_v=None, slide_face_v=None):
         self.coords = coords
         if stop_face_v is None and slide_face_v is None:
-            self.generate_random_orientation()
+            stop_face_v, slide_face_v = self.generate_random_orientation()
         else:
             self.stop_face_v = stop_face_v
             self.slide_face_v = slide_face_v
+        # Define a 3D vector for every face of the block
+        self.face_v = {}
+        self.face_v['stop'] = stop_face_v
+        self.face_v['slide'] = slide_face_v
+        self.face_v['diag'] = numpy.cross(self.face_v['stop'], self.face_v['slide'])
+        self.face_v['hoops'] = [-ii for ii in self.face_v['slide']]
+        self.face_v['star'] = [-ii for ii in self.face_v['stop']]
+        self.face_v['adj'] = [-ii for ii in self.face_v['diag']]
         
     def __repr__(self):
-        return f'Block at {self.coords}, with the "{self.get_top_face_from_orientation()}" face up.'
+        return f'Block at {self.coords}, with the {self.get_face_at_location("top")} face up.'
     
     def __str__(self):
         return self.__repr__()
     
-    def show(self):
-        top, up, left, right, down, bot = self.get_faces_from_orientation()
+    def print_orientation(self):
+        up = self.get_face_at_location('up')
+        left = self.get_face_at_location('left')
+        top = self.get_face_at_location('top')
+        right = self.get_face_at_location('right')
+        down = self.get_face_at_location('down')
+        text =  f'+-------+\n'
+        text += f'|   {up}   |\n'
+        text += f'| {left} {top} {right} |\n'
+        text += f'|   {down}   |\n'
+        text += f'+-------+\n'
+        print(text)
     
     def translate(self, direction):
         self.coords = self.coords + direction
@@ -77,112 +100,30 @@ class Block:
             raise ValueError('unknown tip direction: ' + str(direction))
         self.translate(translation)
         q = Quaternion(axis=axis, degrees=90)
-        self.stop_face_v = q.rotate(self.stop_face_v)
-        self.slide_face_v = q.rotate(self.slide_face_v)
+        for face in self.face_v:
+            self.face_v[face] = q.rotate(self.face_v[face])
         
-    def get_faces_from_orientation(self):
-        if self.stop_face_v[2] > 0:
-            top_face = 'stop'
-            if self.slide_face_v[1] > 0:
-                up_face = 'slide'
-                left_face = 'diag'
-            elif self.slide_face_v[1] < 0:
-                up_face = 'hoops'
-                left_face = 'adj'
-            elif numpy.cross(self.stop_face_v, self.slide_face_v)[1] > 0:
-                up_face = 'diag'
-                left_face = 'hoops'
-            elif numpy.cross(self.stop_face_v, self.slide_face_v)[1] < 0:
-                up_face = 'adj'
-                left_face = 'slide'
-            else:
-                raise ValueError('Something went wrong with the orientation vectors')
-        elif self.stop_face_v[2] < 0:
-            top_face = 'star'
-            if self.slide_face_v[1] > 0:
-                up_face = 'slide'
-                left_face = 'diag'
-            elif self.slide_face_v[1] < 0:
-                up_face = 'hoops'
-                left_face = 'adj'
-            elif numpy.cross(self.stop_face_v, self.slide_face_v)[1] > 0:
-                up_face = 'diag'
-                left_face = 'hoops'
-            elif numpy.cross(self.stop_face_v, self.slide_face_v)[1] < 0:
-                up_face = 'adj'
-                left_face = 'slide'
-            else:
-                raise ValueError('Something went wrong with the orientation vectors')
-        elif self.slide_face_v[2] > 0:
-            top_face = 'slide'
-            if self.stop_face_v[1] > 0:
-                up_face = 'stop'
-                left_face = 'diag'
-            elif self.stop_face_v[1] < 0:
-                up_face = 'star'
-                left_face = 'adj'
-            elif numpy.cross(self.stop_face_v, self.slide_face_v)[1] > 0:
-                up_face = 'adj'
-                left_face = 'stop'
-            elif numpy.cross(self.stop_face_v, self.slide_face_v)[1] < 0:
-                up_face = 'diag'
-                left_face = 'star'
-            else:
-                raise ValueError('Something went wrong with the orientation vectors')
-        elif self.slide_face_v[2] < 0:
-            top_face = 'hoops'
-            if self.stop_face_v[1] > 0:
-                up_face = 'stop'
-                left_face = 'diag'
-            elif self.stop_face_v[1] < 0:
-                up_face = 'star'
-                left_face = 'adj'
-            elif numpy.cross(self.stop_face_v, self.slide_face_v)[1] > 0:
-                up_face = 'adj'
-                left_face = 'stop'
-            elif numpy.cross(self.stop_face_v, self.slide_face_v)[1] < 0:
-                up_face = 'diag'
-                left_face = 'star'
-            else:
-                raise ValueError('Something went wrong with the orientation vectors')
-        elif numpy.cross(self.stop_face_v, self.slide_face_v)[2] > 0:
-            top_face = 'diag'
-            if self.slide_face_v[1] > 0:
-                up_face = 'slide'
-                left_face = 'stop'
-            elif self.slide_face_v[1] < 0:
-                up_face = 'hoops'
-                left_face = 'star'
-            elif self.stop_face_v[1] > 0:
-                up_face = 'stop'
-                left_face = 'hoops'
-            elif self.stop_face_v[1] < 0:
-                up_face = 'star'
-                left_face = 'slide'
-            else:
-                raise ValueError('Something went wrong with the orientation vectors')
-        elif numpy.cross(self.stop_face_v, self.slide_face_v)[2] < 0:
-            top_face = 'adj'
-            if self.slide_face_v[1] > 0:
-                up_face = 'slide'
-                left_face = 'stop'
-            elif self.slide_face_v[1] < 0:
-                up_face = 'hoops'
-                left_face = 'star'
-            elif self.stop_face_v[1] > 0:
-                up_face = 'stop'
-                left_face = 'hoops'
-            elif self.stop_face_v[1] < 0:
-                up_face = 'star'
-                left_face = 'slide'
-            else:
-                raise ValueError('Something went wrong with the orientation vectors')
-        else:
-            raise ValueError('Something went wrong with the orientation vectors')
-        right_face = self.opposite[left_face]
-        down_face = self.opposite[up_face]
-        bot_face = self.opposite[top_face]
-        return top_face, up_face, left_face, right_face, down_face, bot_face
+    def get_face_at_location(self, location):
+        if location == 'top':
+            axis_to_check = 1
+            direction = 1
+        elif location == 'left':
+            axis_to_check = 0
+            direction = -1
+        elif location == 'up':
+            axis_to_check = 2
+            direction = 1
+        elif location == 'right':
+            axis_to_check = 0
+            direction = 1
+        elif location == 'down':
+            axis_to_check = 1
+            direction = -1
+        for face in self.face_v:
+            if eq_with_tol(self.face_v[face][axis_to_check], direction, 0.0001):
+                return face
+        raise ValueError(f'Could not find any faces at location: "{location}" \nface_v:{self.face_v}')
+        
     
     def generate_random_orientation(self):
         stop_face_axis = numpy.random.randint(0, 3)
@@ -196,9 +137,7 @@ class Block:
                 [-1, 0]]
         slide_face_v = possible_slide_face_directions[numpy.random.randint(len(possible_slide_face_directions))]
         slide_face_v.insert(0, stop_face_axis)
-        
-        self.stop_face_v = stop_face_v
-        self.slide_face_v = slide_face_v
+        return stop_face_v, slide_face_v
         
     def move_using_top_face(self):
         pass
