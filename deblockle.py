@@ -9,6 +9,37 @@ from pyquaternion import Quaternion
 import numpy
 
 class Block:
+    '''
+    Assume the user is looking down at the board, then X is positive to the
+    right, Y is positive up, and Z is positive toward the user.  
+    
+    The location of all the block's faces can be tracked by tracking the 
+    orientation of two of the block's faces.  I chose to track the stop face 
+    and the slide face.  The location of all the other faces can be derived 
+    using those two vectors and knowing the design of the block.  Here's an 
+    example of what the block looks like with the star face up
+    +-------+
+    |   +   |
+    | o * \ |
+    |   x   |
+    +-------+
+    Where the faces are represented as symbols as follow:
+    stop:  s
+    star:  *
+    slide: \
+    hoops: o
+    diag:  x
+    adj:   +
+    '''
+    opposites = {
+        'stop':'star',
+        'star':'stop',
+        'slide':'hoops',
+        'hoops':'slide',
+        'diag':'adj',
+        'adj':'diag'
+    }
+    
     def __init__(self, coords, stop_face_v=None, slide_face_v=None):
         self.coords = coords
         if stop_face_v is None and slide_face_v is None:
@@ -22,6 +53,9 @@ class Block:
     
     def __str__(self):
         return self.__repr__()
+    
+    def show(self):
+        top, up, left, right, down, bot = self.get_faces_from_orientation()
     
     def translate(self, direction):
         self.coords = self.coords + direction
@@ -46,22 +80,109 @@ class Block:
         self.stop_face_v = q.rotate(self.stop_face_v)
         self.slide_face_v = q.rotate(self.slide_face_v)
         
-    def get_top_face_from_orientation(self):
+    def get_faces_from_orientation(self):
         if self.stop_face_v[2] > 0:
             top_face = 'stop'
+            if self.slide_face_v[1] > 0:
+                up_face = 'slide'
+                left_face = 'diag'
+            elif self.slide_face_v[1] < 0:
+                up_face = 'hoops'
+                left_face = 'adj'
+            elif numpy.cross(self.stop_face_v, self.slide_face_v)[1] > 0:
+                up_face = 'diag'
+                left_face = 'hoops'
+            elif numpy.cross(self.stop_face_v, self.slide_face_v)[1] < 0:
+                up_face = 'adj'
+                left_face = 'slide'
+            else:
+                raise ValueError('Something went wrong with the orientation vectors')
         elif self.stop_face_v[2] < 0:
             top_face = 'star'
+            if self.slide_face_v[1] > 0:
+                up_face = 'slide'
+                left_face = 'diag'
+            elif self.slide_face_v[1] < 0:
+                up_face = 'hoops'
+                left_face = 'adj'
+            elif numpy.cross(self.stop_face_v, self.slide_face_v)[1] > 0:
+                up_face = 'diag'
+                left_face = 'hoops'
+            elif numpy.cross(self.stop_face_v, self.slide_face_v)[1] < 0:
+                up_face = 'adj'
+                left_face = 'slide'
+            else:
+                raise ValueError('Something went wrong with the orientation vectors')
         elif self.slide_face_v[2] > 0:
             top_face = 'slide'
+            if self.stop_face_v[1] > 0:
+                up_face = 'stop'
+                left_face = 'diag'
+            elif self.stop_face_v[1] < 0:
+                up_face = 'star'
+                left_face = 'adj'
+            elif numpy.cross(self.stop_face_v, self.slide_face_v)[1] > 0:
+                up_face = 'adj'
+                left_face = 'stop'
+            elif numpy.cross(self.stop_face_v, self.slide_face_v)[1] < 0:
+                up_face = 'diag'
+                left_face = 'star'
+            else:
+                raise ValueError('Something went wrong with the orientation vectors')
         elif self.slide_face_v[2] < 0:
             top_face = 'hoops'
+            if self.stop_face_v[1] > 0:
+                up_face = 'stop'
+                left_face = 'diag'
+            elif self.stop_face_v[1] < 0:
+                up_face = 'star'
+                left_face = 'adj'
+            elif numpy.cross(self.stop_face_v, self.slide_face_v)[1] > 0:
+                up_face = 'adj'
+                left_face = 'stop'
+            elif numpy.cross(self.stop_face_v, self.slide_face_v)[1] < 0:
+                up_face = 'diag'
+                left_face = 'star'
+            else:
+                raise ValueError('Something went wrong with the orientation vectors')
         elif numpy.cross(self.stop_face_v, self.slide_face_v)[2] > 0:
             top_face = 'diag'
+            if self.slide_face_v[1] > 0:
+                up_face = 'slide'
+                left_face = 'stop'
+            elif self.slide_face_v[1] < 0:
+                up_face = 'hoops'
+                left_face = 'star'
+            elif self.stop_face_v[1] > 0:
+                up_face = 'stop'
+                left_face = 'hoops'
+            elif self.stop_face_v[1] < 0:
+                up_face = 'star'
+                left_face = 'slide'
+            else:
+                raise ValueError('Something went wrong with the orientation vectors')
         elif numpy.cross(self.stop_face_v, self.slide_face_v)[2] < 0:
             top_face = 'adj'
+            if self.slide_face_v[1] > 0:
+                up_face = 'slide'
+                left_face = 'stop'
+            elif self.slide_face_v[1] < 0:
+                up_face = 'hoops'
+                left_face = 'star'
+            elif self.stop_face_v[1] > 0:
+                up_face = 'stop'
+                left_face = 'hoops'
+            elif self.stop_face_v[1] < 0:
+                up_face = 'star'
+                left_face = 'slide'
+            else:
+                raise ValueError('Something went wrong with the orientation vectors')
         else:
             raise ValueError('Something went wrong with the orientation vectors')
-        return top_face
+        right_face = self.opposite[left_face]
+        down_face = self.opposite[up_face]
+        bot_face = self.opposite[top_face]
+        return top_face, up_face, left_face, right_face, down_face, bot_face
     
     def generate_random_orientation(self):
         stop_face_axis = numpy.random.randint(0, 3)
