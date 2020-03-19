@@ -38,7 +38,7 @@ class Block:
         'adj':   '+'
     }
             
-    opposites = {
+    opposite = {
         'stop':'star',
         'star':'stop',
         'slide':'hoops',
