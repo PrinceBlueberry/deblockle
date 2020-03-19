@@ -24,13 +24,15 @@ class Block:
     |   x   |
     +-------+
     Where the faces are represented as symbols as follow:
-    stop:  s
-    star:  *
-    slide: \
-    hoops: o
-    diag:  x
-    adj:   +
     '''
+    symbol = {
+        'stop':  's' ,
+        'star':  '*' ,
+        'slide': '\\',
+        'hoops': 'o' ,
+        'diag':  'x' ,
+        'adj':   '+' ,
+    }
     opposite = {
         'stop':'star',
         'star':'stop',
@@ -83,9 +85,9 @@ class Block:
     def print_orientation(self):
         top, up, left, right, down, bot = self.get_faces_from_orientation()
         text =  f'+-------+\n'
-        text += f'|   {up}   |\n'
-        text += f'| {left} {top} {right} |\n'
-        text += f'|   {down}   |\n'
+        text += f'|   {self.symbol[up]}   |\n'
+        text += f'| {self.symbol[left]} {self.symbol[top]} {self.symbol[right]} |\n'
+        text += f'|   {self.symbol[down]}   |\n'
         text += f'+-------+\n'
         print(text)
         
@@ -96,29 +98,29 @@ class Block:
             if self.slide_face_v[1] > tol:
                 up_face = 'slide'
                 left_face = 'diag'
-            elif self.slide_face_v[1] < tol:
+            elif self.slide_face_v[1] < -tol:
                 up_face = 'hoops'
                 left_face = 'adj'
             elif numpy.cross(self.stop_face_v, self.slide_face_v)[1] > tol:
                 up_face = 'diag'
                 left_face = 'hoops'
-            elif numpy.cross(self.stop_face_v, self.slide_face_v)[1] < tol:
+            elif numpy.cross(self.stop_face_v, self.slide_face_v)[1] < -tol:
                 up_face = 'adj'
                 left_face = 'slide'
             else:
                 raise ValueError('Something went wrong with the orientation vectors')
-        elif self.stop_face_v[2] < tol:
+        elif self.stop_face_v[2] < -tol:
             top_face = 'star'
             if self.slide_face_v[1] > tol:
                 up_face = 'slide'
                 left_face = 'diag'
-            elif self.slide_face_v[1] < tol:
+            elif self.slide_face_v[1] < -tol:
                 up_face = 'hoops'
                 left_face = 'adj'
             elif numpy.cross(self.stop_face_v, self.slide_face_v)[1] > tol:
                 up_face = 'diag'
                 left_face = 'hoops'
-            elif numpy.cross(self.stop_face_v, self.slide_face_v)[1] < tol:
+            elif numpy.cross(self.stop_face_v, self.slide_face_v)[1] < -tol:
                 up_face = 'adj'
                 left_face = 'slide'
             else:
