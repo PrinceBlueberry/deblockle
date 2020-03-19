@@ -136,7 +136,7 @@ class Block:
                 [1, 0],
                 [-1, 0]]
         slide_face_v = possible_slide_face_directions[numpy.random.randint(len(possible_slide_face_directions))]
-        slide_face_v.insert(0, stop_face_axis)
+        slide_face_v.insert(stop_face_axis, 0)
         return stop_face_v, slide_face_v
         
     def move_using_top_face(self):
