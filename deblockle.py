@@ -28,13 +28,15 @@ class Block:
     |   x   |
     +-------+
     Where the faces are represented as symbols as follow:
-    stop:  s
-    star:  *
-    slide: \
-    hoops: o
-    diag:  x
-    adj:   +
     '''
+    symbol = {
+        'stop':  's' ,
+        'star':  '*' ,
+        'slide': '\\',
+        'hoops': 'o' ,
+        'diag':  'x' ,
+        'adj':   '+'
+    }
             
     opposites = {
         'stop':'star',
@@ -56,7 +58,7 @@ class Block:
         self.face_v = {}
         self.face_v['stop'] = stop_face_v
         self.face_v['slide'] = slide_face_v
-        self.face_v['diag'] = numpy.cross(self.face_v['stop'], self.face_v['slide'])
+        self.face_v['diag'] = list(numpy.cross(self.face_v['stop'], self.face_v['slide']))
         self.face_v['hoops'] = [-ii for ii in self.face_v['slide']]
         self.face_v['star'] = [-ii for ii in self.face_v['stop']]
         self.face_v['adj'] = [-ii for ii in self.face_v['diag']]
@@ -74,9 +76,9 @@ class Block:
         right = self.get_face_at_location('right')
         down = self.get_face_at_location('down')
         text =  f'+-------+\n'
-        text += f'|   {up}   |\n'
-        text += f'| {left} {top} {right} |\n'
-        text += f'|   {down}   |\n'
+        text += f'|   {self.symbol[up]}   |\n'
+        text += f'| {self.symbol[left]} {self.symbol[top]} {self.symbol[right]} |\n'
+        text += f'|   {self.symbol[down]}   |\n'
         text += f'+-------+\n'
         print(text)
     
@@ -104,13 +106,13 @@ class Block:
             self.face_v[face] = q.rotate(self.face_v[face])
         
     def get_face_at_location(self, location):
-        if location == 'top':
+        if location == 'up':
             axis_to_check = 1
             direction = 1
         elif location == 'left':
             axis_to_check = 0
             direction = -1
-        elif location == 'up':
+        elif location == 'top':
             axis_to_check = 2
             direction = 1
         elif location == 'right':
